@@ -6,10 +6,10 @@ from __future__ import (absolute_import, division, print_function)
 
 from collections import defaultdict, namedtuple, OrderedDict
 try:
-    from collections.abc import ItemsView, Mapping
+    from collections.abc import Hashable, ItemsView, Mapping
 except ImportError:  # Python 2
+    from collections import Hashable, Mapping
     ItemsView = list
-    from collections import Mapping
 from functools import wraps
 from itertools import product
 import os
@@ -300,3 +300,28 @@ def memoize(max_nargs=0):
         wrapper.results = {}
         return wrapper
     return decorator
+
+
+class unique_bidict(dict):
+    def __init__(self, *args, **kwargs):
+        super(unique_bidict, self).__init__(*args, **kwargs)
+        for k, v in self.items():
+            if not isinstance(v, Hashable):
+                raise ValueError("for key: %s, unhashable value: %s" % (str(k), str(v)))
+        if len(set(self.values())) != len(self):
+            raise ValueError("Not all values are unique")
+
+    def __invert__(self):
+        return {v: k for k, v in self.items()}
+
+    def __setitem__(self, key, value):
+        if key not in self:
+            if value in self.values():
+                raise ValueError("value already present: %s" % value)
+        if not isinstance(value, Hashable):
+            raise ValueError("for key %s unhashable value: %s" % (repr(key), repr(value)))
+
+        super(unique_bidict, self).__setitem__(key, value)
+
+    def teg(self, *args):
+        return (~self).get(*args)

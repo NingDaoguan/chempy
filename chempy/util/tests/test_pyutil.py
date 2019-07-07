@@ -2,8 +2,9 @@
 from __future__ import (absolute_import, division, print_function)
 
 from collections import OrderedDict
+import pytest
 import types
-from ..pyutil import defaultkeydict, defaultnamedtuple, multi_indexed_cases
+from ..pyutil import defaultkeydict, defaultnamedtuple, multi_indexed_cases, unique_bidict
 
 
 def test_defaultnamedtuple():
@@ -63,3 +64,24 @@ def test_multi_indexed_cases():
     assert mi._asdict() == {'a': 0, 'b': 0}
     assert type(c) is dict
     assert c == {'a': 0.5, 'b': 0.25}
+
+
+def test_unique_bidict():
+    ubd1 = unique_bidict(foo='bar')
+    assert ubd1['foo'] == 'bar'
+    assert (~ubd1)['bar'] == 'foo'
+    assert ubd1.teg('bar') == 'foo'
+    assert ubd1.teg('baz', 'qux') == 'qux'
+    with pytest.raises(ValueError):
+        ubd1['baz'] = 'bar'
+    ubd1.pop('foo')
+    ubd1['baz'] = 'bar'
+    assert ubd1 == {'baz': 'bar'}
+    with pytest.raises(ValueError):
+        ubd1[23] = []
+
+    with pytest.raises(ValueError):
+        unique_bidict(foo={})
+
+    with pytest.raises(ValueError):
+        unique_bidict(foo=1, bar=1)
